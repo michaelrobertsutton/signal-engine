@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function RunNowButton() {
+  const router = useRouter();
   const [state, setState] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
   const [message, setMessage] = useState('');
 
@@ -16,6 +18,7 @@ export default function RunNowButton() {
       const data = await res.json();
       setMessage(data.message ?? `Processed ${data.processed} items`);
       setState('done');
+      router.refresh();
     } catch (err) {
       setMessage(String(err));
       setState('error');

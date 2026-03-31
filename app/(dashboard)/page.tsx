@@ -1,6 +1,7 @@
 import { getRecentArtifacts, getUnresolvedAlerts, countOldPendingItems } from '@/lib/db/queries';
 import { loadProfile } from '@/lib/fit-model/profile';
 import RunNowButton from './run-now-button';
+import FeedbackButtons from './feedback-buttons';
 
 const QUEUE_DEPTH_ALERT_THRESHOLD = 10;
 const QUEUE_DEPTH_ALERT_HOURS = 24;
@@ -98,16 +99,19 @@ export default async function DashboardPage() {
                     <p className="text-xs text-zinc-400 leading-relaxed">{artifact.solutionHypothesis}</p>
                   )}
 
-                  <div className="flex items-center gap-4 pt-1">
-                    <span className="text-xs text-zinc-600">
-                      {artifact.artifactType === 'triage_card' ? 'SAM opportunity' : 'OIG/GAO report'}
-                    </span>
-                    <span className="text-xs text-zinc-600">
-                      {artifact.confidence} confidence
-                    </span>
-                    <span className="text-xs text-zinc-600">
-                      {new Date(artifact.createdAt).toLocaleDateString()}
-                    </span>
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center gap-4">
+                      <span className="text-xs text-zinc-600">
+                        {artifact.artifactType === 'triage_card' ? 'SAM opportunity' : 'OIG/GAO report'}
+                      </span>
+                      <span className="text-xs text-zinc-600">
+                        {artifact.confidence} confidence
+                      </span>
+                      <span className="text-xs text-zinc-600">
+                        {new Date(artifact.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <FeedbackButtons artifactId={artifact.id} />
                   </div>
                 </div>
               ))}
