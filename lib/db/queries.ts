@@ -228,3 +228,10 @@ export async function getUnresolvedAlerts() {
     .where(eq(processingLog.resolved, false))
     .orderBy(desc(processingLog.createdAt));
 }
+
+export async function resolveAlertsByType(eventType: string) {
+  await db
+    .update(processingLog)
+    .set({ resolved: true })
+    .where(and(eq(processingLog.eventType, eventType), eq(processingLog.resolved, false)));
+}

@@ -3,7 +3,7 @@ import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { loadProfile } from '@/lib/fit-model/profile';
 import { runFitModel } from '@/lib/fit-model/matcher';
-import { insertArtifact, markOpportunityStatus, markReportStatus, logEvent } from '@/lib/db/queries';
+import { insertArtifact, markOpportunityStatus, markReportStatus, logEvent, resolveAlertsByType } from '@/lib/db/queries';
 import type { Opportunity, Report } from '@/lib/db/queries';
 
 // Zod schema for LLM output
@@ -110,11 +110,13 @@ export async function analyzeOpportunity(opp: Opportunity): Promise<void> {
   try {
     llmOutput = await callLlm(prompt, google('gemini-2.0-flash'));
     consecutiveFailures = 0;
+    await resolveAlertsByType('llm_consecutive_failures');
   } catch {
     // Attempt 2: fallback model with tighter prompt
     try {
       llmOutput = await callLlm(prompt + '\n\nIMPORTANT: Return only valid JSON, nothing else.', google('gemini-2.0-flash-lite'));
       consecutiveFailures = 0;
+      await resolveAlertsByType('llm_consecutive_failures');
       usedFallback = true;
     } catch (err2) {
       consecutiveFailures++;
