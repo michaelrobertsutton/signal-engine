@@ -134,6 +134,49 @@ export async function getRecentArtifacts(limit = 50) {
     .limit(limit);
 }
 
+export async function getRecentTriageCards(limit = 50) {
+  return db
+    .select({
+      id: artifacts.id,
+      bluf: artifacts.bluf,
+      score: artifacts.score,
+      recommendation: artifacts.recommendation,
+      confidence: artifacts.confidence,
+      solutionHypothesis: artifacts.solutionHypothesis,
+      createdAt: artifacts.createdAt,
+      agency: opportunities.agency,
+      dueDate: opportunities.dueDate,
+      naicsCode: opportunities.naicsCode,
+      url: opportunities.url,
+    })
+    .from(artifacts)
+    .innerJoin(opportunities, eq(artifacts.sourceId, opportunities.id))
+    .where(eq(artifacts.artifactType, 'triage_card'))
+    .orderBy(desc(artifacts.createdAt))
+    .limit(limit);
+}
+
+export async function getRecentOnePagers(limit = 50) {
+  return db
+    .select({
+      id: artifacts.id,
+      bluf: artifacts.bluf,
+      score: artifacts.score,
+      recommendation: artifacts.recommendation,
+      confidence: artifacts.confidence,
+      solutionHypothesis: artifacts.solutionHypothesis,
+      createdAt: artifacts.createdAt,
+      source: reports.source,
+      reportUrl: reports.reportUrl,
+      publishedDate: reports.publishedDate,
+    })
+    .from(artifacts)
+    .innerJoin(reports, eq(artifacts.sourceId, reports.id))
+    .where(eq(artifacts.artifactType, 'one_pager'))
+    .orderBy(desc(artifacts.createdAt))
+    .limit(limit);
+}
+
 // ─── Feedback ─────────────────────────────────────────────────────────────────
 
 export async function upsertFeedback(artifactId: string, rating: 'up' | 'down') {
