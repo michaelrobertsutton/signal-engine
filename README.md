@@ -1,8 +1,26 @@
 # Signal Engine
 
-A Next.js 16 app that scans SAM.gov, OIG, and GAO daily for CMS-adjacent contract opportunities and reports, scores them against Bellese's capability profile, and surfaces AI-generated triage cards on a private dashboard.
+## Executive Summary
 
-Built for Bellese's growth team.
+Every week, new CMS contract opportunities post to SAM.gov and new watchdog reports land from OIG and GAO. Right now, catching the ones that matter to Bellese requires someone to manually scan those sources, read the postings, and decide what's worth leadership attention. That work is slow, inconsistent, and easy to let slip.
+
+Signal Engine automates that first pass.
+
+It monitors SAM.gov, OIG, and GAO daily. When something new appears, it scores it against Bellese's capability profile — our NAICS codes, domain strengths, contract size range, and past performance — and generates a structured one-page brief: what the opportunity or report is, why it matters to Bellese, a concrete hypothesis for how we could respond, and a recommendation (pursue, review, track, or skip).
+
+The result lands on a private internal dashboard within hours of publication, not days.
+
+**What this changes for Bellese:**
+- Growth leadership spends time on decisions, not screening. The system handles the first read on every CMS posting and watchdog report.
+- We stop missing opportunities because they posted on a Tuesday when no one was looking.
+- Our go/no-go decisions get more consistent. The same capability profile evaluates every item, every day.
+- We build an internal record of what we considered and why — useful for capture strategy and for tuning the model over time.
+
+**What it costs to run:** Effectively $0. It runs on Vercel's free tier using a free AI API key. No ongoing infrastructure cost.
+
+**Current status:** MVP is live. It ingests from all three sources daily, scores against Bellese's fit profile, and surfaces triage cards on the dashboard. The model needs more real data to tune — the more we use it and rate the cards, the sharper it gets.
+
+---
 
 ## What it does
 
