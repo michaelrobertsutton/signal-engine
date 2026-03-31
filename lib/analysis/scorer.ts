@@ -1,4 +1,5 @@
 import { generateText } from 'ai';
+import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { loadProfile } from '@/lib/fit-model/profile';
 import { runFitModel } from '@/lib/fit-model/matcher';
@@ -21,9 +22,9 @@ type LlmOutput = z.infer<typeof LlmOutputSchema>;
 const CONSECUTIVE_FAILURE_THRESHOLD = 3;
 let consecutiveFailures = 0; // resets on successful run
 
-async function callLlm(prompt: string, model: string): Promise<LlmOutput> {
+async function callLlm(prompt: string, model: Parameters<typeof generateText>[0]['model']): Promise<LlmOutput> {
   const { text } = await generateText({
-    model: model as Parameters<typeof generateText>[0]['model'],
+    model,
     prompt,
   });
 
@@ -107,12 +108,12 @@ export async function analyzeOpportunity(opp: Opportunity): Promise<void> {
 
   // Attempt 1: primary model
   try {
-    llmOutput = await callLlm(prompt, 'anthropic/claude-sonnet-4.6');
+    llmOutput = await callLlm(prompt, google('gemini-2.0-flash'));
     consecutiveFailures = 0;
   } catch {
     // Attempt 2: fallback model with tighter prompt
     try {
-      llmOutput = await callLlm(prompt + '\n\nIMPORTANT: Return only valid JSON, nothing else.', 'anthropic/claude-haiku-4.5');
+      llmOutput = await callLlm(prompt + '\n\nIMPORTANT: Return only valid JSON, nothing else.', google('gemini-2.0-flash-lite'));
       consecutiveFailures = 0;
       usedFallback = true;
     } catch (err2) {
