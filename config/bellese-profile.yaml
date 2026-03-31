@@ -54,9 +54,14 @@ contract_preferences:
     - firm fixed price
     - time and materials
   naics_whitelist:
-    - 541511
-    - 541611
-    - 54151S
+    - 541511   # Custom Computer Programming Services
+    - 541512   # Computer Systems Design Services
+    - 541519   # Other Computer Related Services
+    - 54151S   # SAM.gov IT services umbrella code
+    - 541611   # Administrative Management Consulting
+    - 518210   # Data Processing and Hosting
+    - 541715   # R&D in Physical/Engineering Sciences (non-biotech)
+    - 611420   # Computer Training
 
 partner_needs:
   - scale staffing for large programs

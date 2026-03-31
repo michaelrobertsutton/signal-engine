@@ -11,6 +11,7 @@
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.83",
     "@ai-sdk/google": "^3.0.54",
+    "@ai-sdk/groq": "^3.0.31",
     "@neondatabase/serverless": "^1.0.2",
     "@types/js-yaml": "^4.0.9",
     "@vercel/oidc": "^3.2.0",

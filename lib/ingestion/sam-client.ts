@@ -1,5 +1,6 @@
 import { getCursor, setCursor, upsertOpportunity } from '@/lib/db/queries';
 import { logEvent } from '@/lib/db/queries';
+import { loadProfile, getNaicsWhitelist } from '@/lib/fit-model/profile';
 
 const SAM_API_BASE = 'https://api.sam.gov/opportunities/v2/search';
 const LOOKBACK_DAYS = 30;
@@ -39,11 +40,17 @@ export async function fetchSamOpportunities(): Promise<number> {
   const postedFromStr = fmt(postedFrom);
   const postedToStr = fmt(new Date());
 
+  // Filter by profile NAICS whitelist so we only fetch relevant IT opportunities
+  const profile = loadProfile();
+  const naicsCodes = getNaicsWhitelist(profile);
+
+  // SAM.gov API v2 ignores naicsCode/keyword query params — fetch a larger batch
+  // and filter client-side against the profile whitelist before saving to DB.
   const params = new URLSearchParams({
     api_key: apiKey,
     postedFrom: postedFromStr,
     postedTo: postedToStr,
-    limit: '10',
+    limit: '50',
     offset: '0',
     ptype: 'o,k,r', // solicitation types
   });
@@ -69,7 +76,11 @@ export async function fetchSamOpportunities(): Promise<number> {
   }
 
   const data: SamApiResponse = await response.json();
-  const items = data.opportunitiesData ?? [];
+  // Client-side NAICS filter: only save opportunities matching the profile whitelist
+  const allItems = data.opportunitiesData ?? [];
+  const items = naicsCodes.length > 0
+    ? allItems.filter((item) => item.naicsCode && naicsCodes.includes(item.naicsCode))
+    : allItems;
 
   let count = 0;
   for (const item of items) {

@@ -108,13 +108,13 @@ export async function analyzeOpportunity(opp: Opportunity): Promise<void> {
 
   // Attempt 1: primary model
   try {
-    llmOutput = await callLlm(prompt, google('gemini-2.0-flash'));
+    llmOutput = await callLlm(prompt, google('gemini-flash-latest'));
     consecutiveFailures = 0;
     await resolveAlertsByType('llm_consecutive_failures');
   } catch {
     // Attempt 2: fallback model with tighter prompt
     try {
-      llmOutput = await callLlm(prompt + '\n\nIMPORTANT: Return only valid JSON, nothing else.', google('gemini-2.0-flash-lite'));
+      llmOutput = await callLlm(prompt + '\n\nIMPORTANT: Return only valid JSON, nothing else.', google('gemini-flash-lite-latest'));
       consecutiveFailures = 0;
       await resolveAlertsByType('llm_consecutive_failures');
       usedFallback = true;
@@ -166,12 +166,14 @@ export async function analyzeReport(report: Report): Promise<void> {
   let usedFallback = false;
 
   try {
-    llmOutput = await callLlm(prompt, 'anthropic/claude-sonnet-4.6');
+    llmOutput = await callLlm(prompt, google('gemini-flash-latest'));
     consecutiveFailures = 0;
+    await resolveAlertsByType('llm_consecutive_failures');
   } catch {
     try {
-      llmOutput = await callLlm(prompt + '\n\nIMPORTANT: Return only valid JSON, nothing else.', 'anthropic/claude-haiku-4.5');
+      llmOutput = await callLlm(prompt + '\n\nIMPORTANT: Return only valid JSON, nothing else.', google('gemini-flash-lite-latest'));
       consecutiveFailures = 0;
+      await resolveAlertsByType('llm_consecutive_failures');
       usedFallback = true;
     } catch (err2) {
       consecutiveFailures++;
