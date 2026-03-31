@@ -4,6 +4,9 @@ import { loadProfile, getNaicsWhitelist } from '@/lib/fit-model/profile';
 
 const SAM_API_BASE = 'https://api.sam.gov/opportunities/v2/search';
 const LOOKBACK_DAYS = 30;
+const PAGE_SIZE = 50;
+const MAX_SCAN = 500;   // max records to page through per run (~10 API calls)
+const TARGET_MATCHES = 10; // stop early once we have enough relevant opps
 
 interface SamOpportunity {
   noticeId: string;
@@ -44,63 +47,75 @@ export async function fetchSamOpportunities(): Promise<number> {
   const profile = loadProfile();
   const naicsCodes = getNaicsWhitelist(profile);
 
-  // SAM.gov API v2 ignores naicsCode/keyword query params — fetch a larger batch
-  // and filter client-side against the profile whitelist before saving to DB.
-  const params = new URLSearchParams({
-    api_key: apiKey,
-    postedFrom: postedFromStr,
-    postedTo: postedToStr,
-    limit: '50',
-    offset: '0',
-    ptype: 'o,k,r', // solicitation types
-  });
-
-  let response: Response;
-  try {
-    response = await fetch(`${SAM_API_BASE}?${params}`, {
-      headers: { Accept: 'application/json' },
-    });
-  } catch (err) {
-    await logEvent('sam_fetch_error', { error: String(err) }, 'sam_gov');
-    throw err;
-  }
-
-  if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    await logEvent(
-      'sam_api_error',
-      { status: response.status, body },
-      'sam_gov',
-    );
-    throw new Error(`SAM API ${response.status}: ${body}`);
-  }
-
-  const data: SamApiResponse = await response.json();
-  // Client-side NAICS filter: only save opportunities matching the profile whitelist
-  const allItems = data.opportunitiesData ?? [];
-  const items = naicsCodes.length > 0
-    ? allItems.filter((item) => item.naicsCode && naicsCodes.includes(item.naicsCode))
-    : allItems;
-
+  // SAM.gov API v2 ignores server-side naicsCode/keyword filters entirely.
+  // Strategy: page through up to MAX_SCAN records in PAGE_SIZE chunks, filter
+  // client-side against the NAICS whitelist, stop early when TARGET_MATCHES found.
+  let offset = 0;
+  let totalScanned = 0;
   let count = 0;
-  for (const item of items) {
-    await upsertOpportunity({
-      noticeId: item.noticeId,
-      title: item.title,
-      agency: item.fullParentPathName,
-      postedDate: item.postedDate ? new Date(item.postedDate) : undefined,
-      dueDate: item.responseDeadLine ? new Date(item.responseDeadLine) : undefined,
-      naicsCode: item.naicsCode,
-      setAside: item.typeOfSetAsideDescription,
-      description: item.description,
-      valueMax: item.award?.amount,
-      url: item.uiLink ?? `https://sam.gov/opp/${item.noticeId}`,
-      status: 'fetched',
+
+  while (totalScanned < MAX_SCAN && count < TARGET_MATCHES) {
+    const params = new URLSearchParams({
+      api_key: apiKey,
+      postedFrom: postedFromStr,
+      postedTo: postedToStr,
+      limit: String(PAGE_SIZE),
+      offset: String(offset),
+      ptype: 'o,k,r',
     });
-    count++;
+
+    let response: Response;
+    try {
+      response = await fetch(`${SAM_API_BASE}?${params}`, {
+        headers: { Accept: 'application/json' },
+      });
+    } catch (err) {
+      await logEvent('sam_fetch_error', { error: String(err) }, 'sam_gov');
+      throw err;
+    }
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      await logEvent('sam_api_error', { status: response.status, body }, 'sam_gov');
+      throw new Error(`SAM API ${response.status}: ${body}`);
+    }
+
+    const data: SamApiResponse = await response.json();
+    const page = data.opportunitiesData ?? [];
+
+    if (page.length === 0) break; // no more results in window
+
+    // Client-side NAICS filter
+    const matching = naicsCodes.length > 0
+      ? page.filter((item) => item.naicsCode && naicsCodes.includes(item.naicsCode))
+      : page;
+
+    for (const item of matching) {
+      await upsertOpportunity({
+        noticeId: item.noticeId,
+        title: item.title,
+        agency: item.fullParentPathName,
+        postedDate: item.postedDate ? new Date(item.postedDate) : undefined,
+        dueDate: item.responseDeadLine ? new Date(item.responseDeadLine) : undefined,
+        naicsCode: item.naicsCode,
+        setAside: item.typeOfSetAsideDescription,
+        description: item.description,
+        valueMax: item.award?.amount,
+        url: item.uiLink ?? `https://sam.gov/opp/${item.noticeId}`,
+        status: 'fetched',
+      });
+      count++;
+    }
+
+    totalScanned += page.length;
+    offset += PAGE_SIZE;
+
+    if (page.length < PAGE_SIZE) break; // reached last page in window
   }
 
-  // Advance cursor to today so next run only fetches new items
+  await logEvent('sam_scan_complete', { scanned: totalScanned, matched: count, offset }, 'sam_gov');
+
+  // Advance cursor to today so next run only fetches newly posted items
   await setCursor('sam_gov', new Date());
 
   return count;
