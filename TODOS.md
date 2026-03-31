@@ -1,5 +1,22 @@
 # Signal Engine — Deferred Work
 
+## TODO: Fix LLM failures — swap AI Gateway for free Google Gemini API
+**What:** Replace `anthropic/claude-sonnet-4.6` (AI Gateway) with `google/gemini-2.0-flash` (direct Google AI SDK). AI Gateway requires a credit card on file even for free tier — this blocks all analysis runs.
+**Why:** `consecutiveFailures` counter hit 3 and is firing the dashboard alert. Every Run Now attempt fails silently.
+**Steps:**
+1. Get free API key: `open https://aistudio.google.com/apikey`
+2. `npm install @ai-sdk/google`
+3. `vercel env add GOOGLE_GENERATIVE_AI_API_KEY` (add to Production + Preview + Development)
+4. `vercel env pull` to refresh `.env.local`
+5. Update `lib/analysis/scorer.ts`:
+   - `import { google } from '@ai-sdk/google'`
+   - Replace `callLlm(prompt, 'anthropic/claude-sonnet-4.6')` → `callLlm(prompt, google('gemini-2.0-flash'))`
+   - Replace `callLlm(prompt, 'anthropic/claude-haiku-4.5')` fallback → `callLlm(prompt, google('gemini-2.0-flash-lite'))`
+   - Change `callLlm` signature from `model: string` to `model: Parameters<typeof generateText>[0]['model']` (remove the cast)
+6. Deploy and click Run Now — confirm artifacts appear
+**Cost:** $0 — Gemini free tier is 1,500 requests/day, we use ~10/day max.
+**Status:** Not started. Do this first next session.
+
 ## TODO: bellese-profile.yaml versioning + quarterly review
 **What:** Add `version` field to bellese-profile.yaml and a quarterly review process.
 **Why:** The profile will drift as Bellese wins contracts, changes positioning, or adds NAICS codes. Without versioning, there's no way to know if a score drop is calibration drift or a genuine change. Without a review cadence, proof_points go stale silently.
