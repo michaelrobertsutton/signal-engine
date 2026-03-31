@@ -1,0 +1,21 @@
+sam_gov:
+  enabled: true
+  # First run looks back this many days; subsequent runs use cursor (lastSeenDate)
+  lookback_days: 30
+  max_pages_per_run: 1
+
+oig:
+  enabled: true
+  base_url: "https://oig.hhs.gov"
+  reports_path: "/reports-and-publications/all-reports/"
+  # Alert + pause if extracted text length deviates from this ratio vs baseline
+  text_length_ratio_min: 0.70
+  text_length_ratio_max: 1.30
+
+gao:
+  enabled: true
+  rss_url: "https://www.gao.gov/rss/reports.xml"
+  # PDFs: parse first N pages only to stay within function timeout
+  pdf_max_pages: 3
+  text_length_ratio_min: 0.70
+  text_length_ratio_max: 1.30

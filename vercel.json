@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/scan-all",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/analyze-pending",
+      "schedule": "0 21 * * *"
+    }
+  ]
+}
