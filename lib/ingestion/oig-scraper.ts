@@ -3,7 +3,7 @@ import { PDFParse } from 'pdf-parse';
 import { upsertReport, logEvent } from '@/lib/db/queries';
 
 const OIG_BASE = 'https://oig.hhs.gov';
-const OIG_REPORTS_PATH = '/reports-and-publications/all-reports/';
+const OIG_REPORTS_PATH = '/reports/all/';
 
 const TEXT_RATIO_MIN = 0.70;
 const TEXT_RATIO_MAX = 1.30;
@@ -49,12 +49,13 @@ export async function scrapeOigReports(): Promise<number> {
   const $ = cheerio.load(html);
   const links: ReportLink[] = [];
 
-  $('a[href*="/reports/"]').each((_, el) => {
+  // Report links match /reports/all/YEAR/slug/ pattern
+  $('a[href*="/reports/all/20"]').each((_, el) => {
     const href = $(el).attr('href') ?? '';
     const title = $(el).text().trim();
     if (!title || !href) return;
     const url = href.startsWith('http') ? href : `${OIG_BASE}${href}`;
-    links.push({ url, title });
+    if (!links.some((l) => l.url === url)) links.push({ url, title });
   });
 
   if (links.length === 0) {

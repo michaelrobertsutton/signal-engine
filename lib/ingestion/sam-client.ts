@@ -33,8 +33,11 @@ export async function fetchSamOpportunities(): Promise<number> {
     ? cursor
     : new Date(Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
 
-  const postedFromStr = postedFrom.toISOString().slice(0, 10); // YYYY-MM-DD
-  const postedToStr = new Date().toISOString().slice(0, 10);
+  // SAM.gov expects MM/dd/yyyy
+  const fmt = (d: Date) =>
+    `${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')}/${d.getFullYear()}`;
+  const postedFromStr = fmt(postedFrom);
+  const postedToStr = fmt(new Date());
 
   const params = new URLSearchParams({
     api_key: apiKey,
