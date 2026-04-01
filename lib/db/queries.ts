@@ -181,10 +181,13 @@ export async function getRecentOnePagers(limit = 50) {
 // ─── Feedback ─────────────────────────────────────────────────────────────────
 
 export async function upsertFeedback(artifactId: string, rating: 'up' | 'down') {
-  await db
-    .insert(artifactFeedback)
-    .values({ artifactId, rating })
-    .onConflictDoNothing(); // idempotent — double-click is a no-op
+  // Delete any existing vote first so changing up↔down always works
+  await db.delete(artifactFeedback).where(eq(artifactFeedback.artifactId, artifactId));
+  await db.insert(artifactFeedback).values({ artifactId, rating });
+}
+
+export async function clearFeedback(artifactId: string) {
+  await db.delete(artifactFeedback).where(eq(artifactFeedback.artifactId, artifactId));
 }
 
 // ─── Source cursors ───────────────────────────────────────────────────────────
