@@ -13,6 +13,18 @@ Signal Engine is a Next.js 16 app (App Router) deployed on Vercel Hobby. It scan
 - Cron handlers always check `Authorization: Bearer ${CRON_SECRET}`
 - Bellese profile at `config/bellese-profile.yaml` — do not hardcode profile data in TypeScript
 
+## SAM.gov API
+
+Spec: https://open.gsa.gov/api/get-opportunities-public-api/
+
+Critical parameter notes for v2 (`https://api.sam.gov/opportunities/v2/search`):
+- NAICS filter param is `ncode` (NOT `naicsCode` — that name is silently ignored)
+- `organizationName: 'Centers for Medicare'` filters server-side to CMS subtier records only
+- `organizationCode` filters by exact org code (CDC = 7523; CMS code TBD)
+- `deptname` and `subtier` are deprecated in v2 — do not use
+- Rate limit: undocumented, varies by key type (federal/non-federal/general); burns fast with pagination
+- Alpha/test endpoint: `https://api-alpha.sam.gov/opportunities/v2/search` — use for testing to avoid burning prod quota
+
 ## File layout
 
 ```
