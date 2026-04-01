@@ -146,14 +146,14 @@ export default async function DashboardPage() {
         <section>
           <div className="flex items-baseline gap-3 mb-4">
             <h2 className="text-sm font-semibold text-white uppercase tracking-wider">
-              Reports
+              Innovation Signals
             </h2>
             <span className="text-xs text-zinc-500">OIG · GAO · Module A</span>
-            <span className="ml-auto text-xs text-zinc-600">{onePagers.length} one-pagers</span>
+            <span className="ml-auto text-xs text-zinc-600">{onePagers.length} signals</span>
           </div>
 
           {onePagers.length === 0 ? (
-            <p className="text-sm text-zinc-500">No report one-pagers yet. Cron runs at 9 AM UTC, or click Run Now.</p>
+            <p className="text-sm text-zinc-500">No innovation signals yet. Cron runs at 10 AM / 10 PM UTC, or click Run Now.</p>
           ) : (
             <div className="space-y-3">
               {onePagers.map((pager) => (
@@ -163,10 +163,6 @@ export default async function DashboardPage() {
                   )}
                   <div className="flex items-start justify-between gap-4">
                     <p className="text-sm font-medium leading-snug">{pager.bluf}</p>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <RecommendationBadge value={pager.recommendation} />
-                      <ScorePill score={pager.score} />
-                    </div>
                   </div>
 
                   {pager.solutionHypothesis && (

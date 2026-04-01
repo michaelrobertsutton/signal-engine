@@ -49,6 +49,10 @@ function buildPrompt(
 
   const matchedDomains = fitResult.layer2?.domainMatches.map((m) => m.term).join(', ') || 'none';
 
+  const solutionInstruction = itemType === 'report'
+    ? `"solution_hypothesis": "Two parts, separated by a newline:\n1. EXISTING LEVERAGE: 1-2 sentences on which Bellese program (MADiE, QMARS, UCM, HQR, MCP) applies and why.\n2. INNOVATION ANGLE: 1-2 sentences proposing a net-new solution Bellese could build — a specific AI tool, cloud-native workflow, or data product that does not exist yet. Name the technology (e.g. AWS Bedrock, FHIR R4 API, LLM-assisted triage). Make it concrete and forward-looking, not a rehash of existing work."`
+    : `"solution_hypothesis": "Specific hypothesis for how Bellese could win or add value. Name the technology, approach, or past work. Do not write generic AI pitches."`;
+
   return `You are a growth analyst for ${profile.company}, a health IT consultancy focused on ${profile.primary_agency ?? 'CMS'}.
 
 ITEM TYPE: ${itemType}
@@ -67,7 +71,7 @@ ${proofPoints}
 Return a JSON object with these exact fields:
 {
   "bluf": "1-2 sentence bottom line — what this ${itemType} is and why it matters to Bellese",
-  "solution_hypothesis": "Specific hypothesis for how Bellese could win or add value. Name the technology, approach, or past work. Do not write generic AI pitches.",
+  ${solutionInstruction},
   "citations": [{"claim": "key factual claim", "source_url": "URL if available"}],
   "confidence_notes": "Optional: note if you had to infer anything or if the content was thin"
 }
