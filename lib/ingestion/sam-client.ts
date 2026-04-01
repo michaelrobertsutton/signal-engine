@@ -5,8 +5,8 @@ import { loadProfile, getNaicsWhitelist } from '@/lib/fit-model/profile';
 const SAM_API_BASE = 'https://api.sam.gov/opportunities/v2/search';
 const LOOKBACK_DAYS = 30;
 const PAGE_SIZE = 50;
-const MAX_SCAN = 500;   // max records to page through per run (~10 API calls)
-const TARGET_MATCHES = 10; // stop early once we have enough relevant opps
+const MAX_SCAN = 200;   // CMS posts ~50-100 opps/month; 2-4 API calls max
+const TARGET_MATCHES = 20; // stop early once we have enough relevant opps
 
 interface SamOpportunity {
   noticeId: string;
@@ -47,9 +47,10 @@ export async function fetchSamOpportunities(): Promise<number> {
   const profile = loadProfile();
   const naicsCodes = getNaicsWhitelist(profile);
 
-  // SAM.gov API v2 ignores server-side naicsCode/keyword filters entirely.
-  // Strategy: page through up to MAX_SCAN records in PAGE_SIZE chunks, filter
-  // client-side against the NAICS whitelist, stop early when TARGET_MATCHES found.
+  // organizationName=Centers for Medicare filters server-side to CMS-only records
+  // (~50-100/month), cutting API calls from ~10 to 1-2 per scan.
+  // ncode is the correct v2 NAICS param but only accepts one code at a time —
+  // keep client-side NAICS filtering for multi-code coverage.
   let offset = 0;
   let totalScanned = 0;
   let count = 0;
@@ -62,6 +63,7 @@ export async function fetchSamOpportunities(): Promise<number> {
       limit: String(PAGE_SIZE),
       offset: String(offset),
       ptype: 'o,k,r',
+      organizationName: 'Centers for Medicare',
     });
 
     let response: Response;
