@@ -166,6 +166,7 @@ export async function getRecentOnePagers(limit = 50) {
       confidence: artifacts.confidence,
       solutionHypothesis: artifacts.solutionHypothesis,
       createdAt: artifacts.createdAt,
+      title: reports.title,
       source: reports.source,
       reportUrl: reports.reportUrl,
       publishedDate: reports.publishedDate,
