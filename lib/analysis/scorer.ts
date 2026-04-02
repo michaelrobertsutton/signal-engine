@@ -3,6 +3,7 @@ import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { loadProfile } from '@/lib/fit-model/profile';
 import { runFitModel } from '@/lib/fit-model/matcher';
+import type { FitModelResult } from '@/lib/fit-model/types';
 import { insertArtifact, markOpportunityStatus, markReportStatus, logEvent, resolveAlertsByType } from '@/lib/db/queries';
 import type { Opportunity, Report } from '@/lib/db/queries';
 
@@ -38,7 +39,7 @@ function buildPrompt(
   itemType: 'opportunity' | 'report',
   title: string,
   content: string,
-  fitResult: ReturnType<typeof runFitModel>,
+  fitResult: FitModelResult,
   profileVersion: string,
 ): string {
   const profile = loadProfile();
@@ -86,7 +87,7 @@ Rules:
 export async function analyzeOpportunity(opp: Opportunity): Promise<void> {
   await markOpportunityStatus(opp.id, 'analyzing');
   const profile = loadProfile();
-  const fitResult = runFitModel(profile, {
+  const fitResult = await runFitModel(profile, {
     naicsCode: opp.naicsCode,
     valueMin: opp.valueMin,
     valueMax: opp.valueMax,
@@ -156,7 +157,7 @@ export async function analyzeReport(report: Report): Promise<void> {
   const profile = loadProfile();
 
   // Reports don't go through Layer 1 (no NAICS/value data); score LLM-first
-  const fitResult = runFitModel(profile, { description: report.content });
+  const fitResult = await runFitModel(profile, { description: report.content });
 
   const prompt = buildPrompt(
     'report',

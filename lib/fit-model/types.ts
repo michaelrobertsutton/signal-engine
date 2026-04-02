@@ -17,6 +17,7 @@ export interface Layer2Result {
   domainMatches: DomainMatch[];
   technicalMatches: string[];
   gapPenalties: string[];
+  scoringMethod?: 'semantic' | 'keyword';
 }
 
 export interface FitModelResult {

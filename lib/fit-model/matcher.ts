@@ -61,7 +61,7 @@ export function runLayer1(
 
 // ─── Layer 2: Capability scoring ──────────────────────────────────────────────
 
-export function runLayer2(
+export function runLayer2Keyword(
   profile: BelleseProfile,
   text: string,
 ): Layer2Result {
@@ -101,6 +101,26 @@ export function runLayer2(
   return { score, domainMatches, technicalMatches, gapPenalties };
 }
 
+export async function runLayer2(
+  profile: BelleseProfile,
+  text: string,
+): Promise<Layer2Result> {
+  try {
+    const { semanticScore } = await import('./embedder');
+    const score = await semanticScore(profile, text);
+    return {
+      score,
+      domainMatches: [],
+      technicalMatches: [],
+      gapPenalties: [],
+      scoringMethod: 'semantic',
+    };
+  } catch (err) {
+    console.warn('[fit-model] Semantic embedding failed, falling back to keyword:', String(err));
+    return { ...runLayer2Keyword(profile, text), scoringMethod: 'keyword' };
+  }
+}
+
 // ─── Final recommendation ─────────────────────────────────────────────────────
 
 export function scoreToRecommendation(
@@ -114,7 +134,7 @@ export function scoreToRecommendation(
 
 // ─── Full fit model run ───────────────────────────────────────────────────────
 
-export function runFitModel(
+export async function runFitModel(
   profile: BelleseProfile,
   item: {
     naicsCode?: string | null;
@@ -123,7 +143,7 @@ export function runFitModel(
     dueDate?: Date | null;
     description?: string | null;
   },
-): FitModelResult {
+): Promise<FitModelResult> {
   const layer1 = runLayer1(profile, item);
 
   if (!layer1.passed) {
@@ -136,13 +156,18 @@ export function runFitModel(
     };
   }
 
-  const layer2 = runLayer2(profile, item.description ?? '');
+  const layer2 = await runLayer2(profile, item.description ?? '');
 
   const totalScore = layer2.score;
   const recommendation = scoreToRecommendation(totalScore);
 
-  const hasStrongMatch = layer2.domainMatches.some((m) => m.strength === 'strong');
-  const confidence = hasStrongMatch ? 'high' : layer2.domainMatches.length > 0 ? 'medium' : 'low';
+  let confidence: 'high' | 'medium' | 'low';
+  if (layer2.scoringMethod === 'semantic') {
+    confidence = totalScore >= 80 ? 'high' : totalScore >= 55 ? 'medium' : 'low';
+  } else {
+    const hasStrongMatch = layer2.domainMatches.some((m) => m.strength === 'strong');
+    confidence = hasStrongMatch ? 'high' : layer2.domainMatches.length > 0 ? 'medium' : 'low';
+  }
 
   return { layer1, layer2, totalScore, recommendation, confidence };
 }
