@@ -12,7 +12,7 @@ const LlmOutputSchema = z.object({
   solution_hypothesis: z.string().min(10).max(1000),
   citations: z.array(z.object({
     claim: z.string(),
-    source_url: z.string().url().optional(),
+    source_url: z.string().optional(), // LLM returns relative URLs/DOIs that fail strict .url()
   })).optional(),
   confidence_notes: z.string().optional(),
 });
