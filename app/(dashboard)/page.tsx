@@ -3,6 +3,8 @@ import { loadProfile } from '@/lib/fit-model/profile';
 import RunNowButton from './run-now-button';
 import FeedbackButtons from './feedback-buttons';
 
+export const dynamic = 'force-dynamic';
+
 const QUEUE_DEPTH_ALERT_THRESHOLD = 10;
 const QUEUE_DEPTH_ALERT_HOURS = 24;
 
