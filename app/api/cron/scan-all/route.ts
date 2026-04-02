@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     results.gao = `error: ${String(err)}`;
   }
 
-  await logEvent('scan_all_complete', results, 'cron');
+  await logEvent('scan_all_complete', results, 'cron').catch(() => {});
 
   return Response.json({ ok: true, results });
 }
