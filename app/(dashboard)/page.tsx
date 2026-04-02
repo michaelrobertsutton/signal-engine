@@ -98,7 +98,7 @@ export default async function DashboardPage() {
               {triageCards.map((card) => (
                 <div key={card.id} className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4 space-y-2">
                   {card.title && (
-                    <p className="text-xs text-zinc-500 font-medium truncate">{card.title}</p>
+                    <p className="text-sm text-zinc-200 font-semibold">{card.title}</p>
                   )}
                   <div className="flex items-start justify-between gap-4">
                     <p className="text-sm font-medium leading-snug">{card.bluf}</p>
@@ -164,7 +164,7 @@ export default async function DashboardPage() {
               {onePagers.map((pager) => (
                 <div key={pager.id} className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4 space-y-2">
                   {pager.title && (
-                    <p className="text-xs text-zinc-500 font-medium truncate">{pager.title}</p>
+                    <p className="text-sm text-zinc-200 font-semibold">{pager.title}</p>
                   )}
                   <div className="flex items-start justify-between gap-4">
                     <p className="text-sm font-medium leading-snug">{pager.bluf}</p>
