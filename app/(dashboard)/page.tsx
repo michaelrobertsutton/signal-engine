@@ -95,6 +95,9 @@ export default async function DashboardPage() {
             <div className="space-y-3">
               {triageCards.map((card) => (
                 <div key={card.id} className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-4 space-y-2">
+                  {card.title && (
+                    <p className="text-xs text-zinc-500 font-medium truncate">{card.title}</p>
+                  )}
                   <div className="flex items-start justify-between gap-4">
                     <p className="text-sm font-medium leading-snug">{card.bluf}</p>
                     <div className="flex items-center gap-2 shrink-0">

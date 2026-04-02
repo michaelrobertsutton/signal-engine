@@ -47,12 +47,13 @@ export async function fetchSamOpportunities(): Promise<number> {
   const profile = loadProfile();
   const naicsCodes = getNaicsWhitelist(profile);
 
-  // organizationName=Centers for Medicare filters server-side to CMS-only records
-  // (~50-100/month), cutting API calls from ~10 to 1-2 per scan.
-  // ncode is the correct v2 NAICS param but only accepts one code at a time —
-  // keep client-side NAICS filtering for multi-code coverage.
+  // organizationName=Centers for Medicare is passed but appears to be silently
+  // ignored by SAM.gov v2 (same pattern as naicsCode vs ncode). Client-side
+  // fullParentPathName filter below is the actual CMS gate.
+  // ncode accepts one code at a time — keep client-side NAICS filtering too.
   let offset = 0;
   let totalScanned = 0;
+  let totalCmsGated = 0;
   let count = 0;
 
   while (totalScanned < MAX_SCAN && count < TARGET_MATCHES) {
@@ -87,10 +88,17 @@ export async function fetchSamOpportunities(): Promise<number> {
 
     if (page.length === 0) break; // no more results in window
 
+    // Hard CMS gate: fullParentPathName must contain 'medicare'.
+    // organizationName server-side param appears to be silently ignored
+    // (same pattern as naicsCode vs ncode), so enforce CMS-only client-side.
+    const cmsPage = page.filter(
+      (item) => item.fullParentPathName?.toLowerCase().includes('medicare') ?? false,
+    );
+
     // Client-side NAICS filter
     const matching = naicsCodes.length > 0
-      ? page.filter((item) => item.naicsCode && naicsCodes.includes(item.naicsCode))
-      : page;
+      ? cmsPage.filter((item) => item.naicsCode && naicsCodes.includes(item.naicsCode))
+      : cmsPage;
 
     for (const item of matching) {
       await upsertOpportunity({
@@ -110,12 +118,13 @@ export async function fetchSamOpportunities(): Promise<number> {
     }
 
     totalScanned += page.length;
+    totalCmsGated += cmsPage.length;
     offset += PAGE_SIZE;
 
     if (page.length < PAGE_SIZE) break; // reached last page in window
   }
 
-  await logEvent('sam_scan_complete', { scanned: totalScanned, matched: count, offset }, 'sam_gov');
+  await logEvent('sam_scan_complete', { scanned: totalScanned, cmsGated: totalCmsGated, matched: count, offset }, 'sam_gov');
 
   // Advance cursor to today so next run only fetches newly posted items
   await setCursor('sam_gov', new Date());

@@ -144,6 +144,7 @@ export async function getRecentTriageCards(limit = 50) {
       confidence: artifacts.confidence,
       solutionHypothesis: artifacts.solutionHypothesis,
       createdAt: artifacts.createdAt,
+      title: opportunities.title,
       agency: opportunities.agency,
       dueDate: opportunities.dueDate,
       naicsCode: opportunities.naicsCode,
