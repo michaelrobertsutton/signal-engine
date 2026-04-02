@@ -240,3 +240,11 @@ export async function resolveAlertsByType(eventType: string) {
     .set({ resolved: true })
     .where(and(eq(processingLog.eventType, eventType), eq(processingLog.resolved, false)));
 }
+
+export async function getRecentLog(limit = 50) {
+  return db
+    .select()
+    .from(processingLog)
+    .orderBy(desc(processingLog.createdAt))
+    .limit(limit);
+}
