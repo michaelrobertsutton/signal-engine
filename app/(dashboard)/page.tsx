@@ -2,6 +2,7 @@ import { getRecentTriageCards, getRecentOnePagers, getUnresolvedAlerts, countOld
 import { loadProfile } from '@/lib/fit-model/profile';
 import RunNowButton from './run-now-button';
 import FeedbackButtons from './feedback-buttons';
+import DismissAlertButton from './dismiss-alert-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,13 +72,15 @@ export default async function DashboardPage() {
           </div>
         )}
         {scraperAlerts.length > 0 && (
-          <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-            Scraper alert: {scraperAlerts.length} issue(s) detected. Check Vercel logs.
+          <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300 flex items-center gap-2">
+            <span>Scraper alert: {scraperAlerts.length} issue(s) detected. Check Vercel logs.</span>
+            <DismissAlertButton eventType="scraper_alert" />
           </div>
         )}
         {llmAlerts.length > 0 && (
-          <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-            LLM failures: {llmAlerts.length} consecutive failure event(s). Check AI Gateway status.
+          <div className="rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300 flex items-center gap-2">
+            <span>LLM failures: {llmAlerts.length} consecutive failure event(s). Check AI Gateway status.</span>
+            <DismissAlertButton eventType="llm_consecutive_failures" />
           </div>
         )}
 

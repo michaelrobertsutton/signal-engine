@@ -1,10 +1,7 @@
 import * as cheerio from 'cheerio';
-import { PDFParse } from 'pdf-parse';
 import { upsertReport, logEvent } from '@/lib/db/queries';
 
 const GAO_RSS_URL = 'https://www.gao.gov/rss/reports.xml';
-// Pages 1-3 only to stay within function timeout budget
-const PDF_PARTIAL_PAGES = [1, 2, 3];
 
 interface GaoEntry {
   url: string;
@@ -24,28 +21,12 @@ async function parseRss(xml: string): Promise<GaoEntry[]> {
   return entries;
 }
 
-async function extractGaoText(url: string): Promise<{ text: string; contentType: 'html' | 'pdf' }> {
+async function extractGaoText(url: string): Promise<{ text: string; contentType: 'html' }> {
   const pageRes = await fetch(url, { headers: { 'User-Agent': 'signal-engine/1.0' } });
   if (!pageRes.ok) throw new Error(`HTTP ${pageRes.status} fetching ${url}`);
   const html = await pageRes.text();
   const $ = cheerio.load(html);
 
-  // Try to find a PDF link on the page
-  const pdfHref = $('a[href$=".pdf"]').first().attr('href');
-  if (pdfHref) {
-    const pdfUrl = pdfHref.startsWith('http') ? pdfHref : `https://www.gao.gov${pdfHref}`;
-    const parser = new PDFParse({ url: pdfUrl });
-    try {
-      const result = await parser.getText({ partial: PDF_PARTIAL_PAGES });
-      return { text: result.text, contentType: 'pdf' };
-    } catch {
-      // Fall through to HTML summary
-    } finally {
-      await parser.destroy();
-    }
-  }
-
-  // Fallback: HTML summary text
   $('nav, footer, script, style, header').remove();
   const text = $('main, article, .report-content, body')
     .first()

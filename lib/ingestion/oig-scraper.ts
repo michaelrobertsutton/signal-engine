@@ -1,5 +1,4 @@
 import * as cheerio from 'cheerio';
-import { PDFParse } from 'pdf-parse';
 import { upsertReport, logEvent } from '@/lib/db/queries';
 
 const OIG_BASE = 'https://oig.hhs.gov';
@@ -13,17 +12,7 @@ interface ReportLink {
   title: string;
 }
 
-async function extractText(url: string): Promise<{ text: string; contentType: 'html' | 'pdf' }> {
-  if (url.toLowerCase().endsWith('.pdf')) {
-    const parser = new PDFParse({ url });
-    try {
-      const result = await parser.getText();
-      return { text: result.text, contentType: 'pdf' };
-    } finally {
-      await parser.destroy();
-    }
-  }
-
+async function extractText(url: string): Promise<{ text: string; contentType: 'html' }> {
   const res = await fetch(url, { headers: { 'User-Agent': 'signal-engine/1.0' } });
   if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
   const html = await res.text();
