@@ -1,106 +1,107 @@
 # Signal Engine
 
-## Executive Summary
+Automated federal opportunity intelligence. Monitors SAM.gov solicitations and OIG/GAO watchdog reports daily, scores each item against your company profile, and surfaces ranked triage cards on a private dashboard.
 
-Every week, new CMS contract opportunities post to SAM.gov and new watchdog reports land from OIG and GAO. Right now, catching the ones that matter to Bellese requires someone to manually scan those sources, read the postings, and decide what's worth leadership attention. That work is slow, inconsistent, and easy to let slip.
+Built for government contractors who want to stop missing opportunities because they posted on the wrong day.
 
-Signal Engine automates that first pass.
+## How it works
 
-It monitors SAM.gov, OIG, and GAO daily. When something new appears, it scores it against Bellese's capability profile — our NAICS codes, domain strengths, contract size range, and past performance — and generates a structured one-page brief: what the opportunity or report is, why it matters to Bellese, a concrete hypothesis for how we could respond, and a recommendation (pursue, review, track, or skip).
-
-The result lands on a private internal dashboard within hours of publication, not days.
-
-**What this changes for Bellese:**
-- Growth leadership spends time on decisions, not screening. The system handles the first read on every CMS posting and watchdog report.
-- We stop missing opportunities because they posted on a Tuesday when no one was looking.
-- Our go/no-go decisions get more consistent. The same capability profile evaluates every item, every day.
-- We build an internal record of what we considered and why — useful for capture strategy and for tuning the model over time.
-
-**What it costs to run:** Effectively $0. It runs on Vercel's free tier using a free AI API key. No ongoing infrastructure cost.
-
-**Current status:** MVP is live. It ingests from all three sources daily, scores against Bellese's fit profile, and surfaces triage cards on the dashboard. The model needs more real data to tune — the more we use it and rate the cards, the sharper it gets.
-
----
-
-## What it does
-
-- **Daily ingestion** — pulls SAM.gov solicitations, OIG reports, and GAO reports via cron
-- **Fit scoring** — two-layer model: hard gates (NAICS, value range, exclusions) then LLM capability scoring against `config/bellese-profile.yaml`
-- **Triage cards** — each passing item gets a BLUF, solution hypothesis, score (0–100), and recommendation (pursue / review / track)
-- **Dashboard** — protected by passphrase, shows recent artifacts with alert banners for queue depth and scraper issues
-- **Feedback** — thumbs up/down on each card feeds future model tuning
+1. **Daily ingestion** — cron jobs pull from SAM.gov (contract solicitations), OIG (audit reports), and GAO (watchdog reports)
+2. **Two-layer fit model** — hard gates first (NAICS whitelist, contract size range, exclusion keywords), then LLM capability scoring against your `config/profile.yaml`
+3. **Triage cards** — each passing item gets a BLUF, a solution hypothesis grounded in your proof points, a score (0-100), and a recommendation: pursue / review / track / skip
+4. **Private dashboard** — passphrase-protected Next.js app; thumbs up/down feedback tunes the model over time
 
 ## Stack
 
-- Next.js 16 (App Router, `proxy.ts` auth)
+- Next.js 16 (App Router)
 - Drizzle ORM + Neon Postgres
-- Vercel AI Gateway (`anthropic/claude-sonnet-4.6`, OIDC auth)
-- Deployed on Vercel Hobby
+- Vercel AI SDK (Google Gemini by default)
+- Vercel Cron + OIDC auth
+- Tailwind CSS
 
-## Local setup
+## Setup
+
+### 1. Clone and install
 
 ```bash
+git clone https://github.com/michaelrobertsutton/signal-engine.git
+cd signal-engine
 npm install
-vercel link          # connects to the Vercel project
-vercel env pull      # pulls DATABASE_URL, OIDC token, and other secrets to .env.local
+```
+
+### 2. Configure your profile
+
+```bash
+cp config/profile.example.yaml config/profile.yaml
+```
+
+Edit `config/profile.yaml`. The LLM uses your proof points when generating solution hypotheses — the more concrete your profile, the sharper the output. See the example file for all available fields.
+
+### 3. Set up Neon Postgres
+
+Create a free [Neon](https://neon.tech) database, then run the schema migration:
+
+```bash
+npx drizzle-kit push
+```
+
+### 4. Configure environment variables
+
+```bash
+cp .env.example .env.local
+```
+
+Fill in your values. See `.env.example` for documentation on each variable.
+
+### 5. Deploy to Vercel
+
+Connect the repo to Vercel, add your environment variables in the dashboard, and deploy. Cron jobs run automatically on Vercel's Hobby tier at no cost.
+
+## Configuration
+
+Signal Engine is driven entirely by `config/profile.yaml`. Key sections:
+
+| Section | Purpose |
+|---|---|
+| `domain.strong` | Terms matched against solicitations/reports for capability scoring |
+| `domain.exclusions` | Keywords that immediately disqualify an item |
+| `capabilities.proof_points` | Past contracts used by the LLM for concrete solution hypotheses |
+| `contract_preferences.naics_whitelist` | NAICS codes to filter SAM.gov results (empty = no filter) |
+| `contract_preferences.size_range` | Floor/ceiling contract values for hard-gate filtering |
+| `primary_agency_name` | Substring matched against SAM.gov `fullParentPathName` to scope to your target agency |
+
+A well-filled profile produces useful triage cards. An empty profile produces generic noise.
+
+## Running locally
+
+```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and log in with the passphrase in `.env.local` (`DASHBOARD_PASSPHRASE`).
-
-## Environment variables
-
-| Variable | Purpose |
-|---|---|
-| `DATABASE_URL` | Neon Postgres pooled connection |
-| `DASHBOARD_PASSPHRASE` | Login passphrase for the dashboard |
-| `SESSION_SECRET` | Cookie value for session validation |
-| `SAM_GOV_API_KEY` | SAM.gov API key |
-| `CRON_SECRET` | Bearer token for cron/admin routes |
-| `VERCEL_OIDC_TOKEN` | Auto-provisioned by Vercel for AI Gateway |
-
-## Database
+Trigger ingestion manually via the "Run Now" button in the dashboard, or call the cron endpoints directly:
 
 ```bash
-npm run db:generate   # generate migrations from schema changes
-npm run db:migrate    # apply migrations to Neon
-npm run db:studio     # open Drizzle Studio
+curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/scan-all
+curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/analyze-pending
 ```
 
-Schema is in `lib/db/schema.ts`. Never edit files in `drizzle/` manually.
-
-## Capability profile
-
-Edit `config/bellese-profile.yaml` to update Bellese's NAICS codes, contract size range, domain keywords, and proof points. The fit model reloads this on every analysis run — no redeploy needed.
-
-## Cron jobs
-
-Configured in `vercel.json`. Two jobs on Vercel Hobby (daily minimum):
-
-| Route | Schedule | Purpose |
-|---|---|---|
-| `/api/cron/scan-all` | 9 AM UTC | Fetch from SAM, OIG, GAO |
-| `/api/cron/analyze-pending` | 9 PM UTC | LLM-score up to 10 fetched items |
-
-Trigger manually from the dashboard via **Run Now** (calls `/api/admin/trigger-analysis`).
-
-## File layout
+## Project structure
 
 ```
-app/
-  (dashboard)/         — protected routes
-  login/               — passphrase login
-  api/
-    cron/              — scan-all, analyze-pending, timeout-test
-    admin/             — trigger-analysis (Run Now)
-    feedback/          — thumbs up/down
 config/
-  bellese-profile.yaml — capability profile (edit this)
-  sources.yaml         — scraper config
+  profile.example.yaml    Company profile template — copy to profile.yaml
+  sources.yaml            Scraper configuration (OIG, GAO, SAM)
 lib/
-  db/                  — Drizzle schema, client, queries
-  fit-model/           — profile loader + two-layer scorer
-  ingestion/           — SAM, OIG, GAO clients
-  analysis/            — LLM scorer + citation extractor
-proxy.ts               — Next.js 16 session auth
+  fit-model/              Two-layer scoring: hard gates + LLM capability match
+  analysis/               LLM prompt construction and triage card generation
+  ingestion/              SAM.gov, OIG, GAO scrapers
+  db/                     Drizzle schema and queries
+app/
+  (dashboard)/            Main dashboard UI
+  api/cron/               Cron endpoint handlers
+  api/feedback/           Thumbs up/down API
 ```
+
+## License
+
+MIT
