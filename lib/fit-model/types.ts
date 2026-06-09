@@ -36,11 +36,12 @@ export const SCORE_THRESHOLDS = {
   // below 50 = skip
 } as const;
 
-// bellese-profile.yaml shape (after parsing)
-export interface BelleseProfile {
+// profile.yaml shape (after parsing)
+export interface CompanyProfile {
   version: string;
   company: string;
   primary_agency: string;
+  primary_agency_name?: string;
   domain: {
     strong: string[];
     conditional: string[];
