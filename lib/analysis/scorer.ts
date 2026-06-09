@@ -45,8 +45,7 @@ function buildPrompt(
   const proofPoints = (profile.capabilities?.proof_points ?? [])
     .slice(0, 5)
     .map((p) => `- ${p.contract} (${p.agency}): ${p.description}`)
-    .join('
-');
+    .join('\n');
 
   const matchedDomains = fitResult.layer2?.domainMatches.map((m) => m.term).join(', ') || 'none';
 
@@ -117,9 +116,7 @@ export async function analyzeOpportunity(opp: Opportunity): Promise<void> {
     await resolveAlertsByType('llm_consecutive_failures');
   } catch {
     try {
-      llmOutput = await callLlm(prompt + '
-
-IMPORTANT: Return only valid JSON, nothing else.', google('gemini-flash-lite-latest'));
+      llmOutput = await callLlm(prompt + '\n\nIMPORTANT: Return only valid JSON, nothing else.', google('gemini-flash-lite-latest'));
       consecutiveFailures = 0;
       await resolveAlertsByType('llm_consecutive_failures');
       usedFallback = true;
@@ -175,9 +172,7 @@ export async function analyzeReport(report: Report): Promise<void> {
     await resolveAlertsByType('llm_consecutive_failures');
   } catch {
     try {
-      llmOutput = await callLlm(prompt + '
-
-IMPORTANT: Return only valid JSON, nothing else.', google('gemini-flash-lite-latest'));
+      llmOutput = await callLlm(prompt + '\n\nIMPORTANT: Return only valid JSON, nothing else.', google('gemini-flash-lite-latest'));
       consecutiveFailures = 0;
       await resolveAlertsByType('llm_consecutive_failures');
       usedFallback = true;

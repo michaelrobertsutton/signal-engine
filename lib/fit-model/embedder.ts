@@ -1,6 +1,6 @@
 import { embed, cosineSimilarity } from 'ai';
 import { google } from '@ai-sdk/google';
-import type { BelleseProfile } from './types';
+import type { CompanyProfile } from './types';
 
 // Thresholds for mapping cosine similarity [-1,1] to score [0,100].
 // Tunable constants — adjust after observing production similarity distributions.
@@ -14,7 +14,7 @@ export function clearEmbeddingCache(): void {
   _profileEmbeddingCache = null;
 }
 
-export function buildProfileSummary(profile: BelleseProfile): string {
+export function buildProfileSummary(profile: CompanyProfile): string {
   const parts: string[] = [];
 
   // Core identity
@@ -45,7 +45,7 @@ export function buildProfileSummary(profile: BelleseProfile): string {
   return parts.join('\n').slice(0, 1200);
 }
 
-export async function getProfileEmbedding(profile: BelleseProfile): Promise<number[]> {
+export async function getProfileEmbedding(profile: CompanyProfile): Promise<number[]> {
   if (_profileEmbeddingCache) return _profileEmbeddingCache;
 
   const { embedding } = await embed({
@@ -59,7 +59,7 @@ export async function getProfileEmbedding(profile: BelleseProfile): Promise<numb
 }
 
 export async function semanticScore(
-  profile: BelleseProfile,
+  profile: CompanyProfile,
   text: string,
 ): Promise<number> {
   if (!text.trim()) return 0;
