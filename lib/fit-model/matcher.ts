@@ -1,4 +1,4 @@
-import type { BelleseProfile, Layer1Result, Layer2Result, FitModelResult } from './types';
+import type { CompanyProfile, Layer1Result, Layer2Result, FitModelResult } from './types';
 import { SCORE_THRESHOLDS } from './types';
 import { getNaicsWhitelist, getExclusionKeywords } from './profile';
 
@@ -11,7 +11,7 @@ const SCORE_CAP = 100;
 // ─── Layer 1: Hard gates ──────────────────────────────────────────────────────
 
 export function runLayer1(
-  profile: BelleseProfile,
+  profile: CompanyProfile,
   item: {
     naicsCode?: string | null;
     valueMin?: number | null;
@@ -62,7 +62,7 @@ export function runLayer1(
 // ─── Layer 2: Capability scoring ──────────────────────────────────────────────
 
 export function runLayer2Keyword(
-  profile: BelleseProfile,
+  profile: CompanyProfile,
   text: string,
 ): Layer2Result {
   const lower = text.toLowerCase();
@@ -102,7 +102,7 @@ export function runLayer2Keyword(
 }
 
 export async function runLayer2(
-  profile: BelleseProfile,
+  profile: CompanyProfile,
   text: string,
 ): Promise<Layer2Result> {
   try {
@@ -135,7 +135,7 @@ export function scoreToRecommendation(
 // ─── Full fit model run ───────────────────────────────────────────────────────
 
 export async function runFitModel(
-  profile: BelleseProfile,
+  profile: CompanyProfile,
   item: {
     naicsCode?: string | null;
     valueMin?: number | null;
