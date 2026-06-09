@@ -1,26 +1,28 @@
 import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
-import type { BelleseProfile } from './types';
+import type { CompanyProfile } from './types';
 
-const PROFILE_PATH = path.join(process.cwd(), 'config', 'bellese-profile.yaml');
+const PROFILE_PATH = process.env.PROFILE_PATH
+  ? path.resolve(process.env.PROFILE_PATH)
+  : path.join(process.cwd(), 'config', 'profile.yaml');
 
-let cached: BelleseProfile | null = null;
+let cached: CompanyProfile | null = null;
 
-export function loadProfile(): BelleseProfile {
+export function loadProfile(): CompanyProfile {
   if (cached) return cached;
 
   const raw = fs.readFileSync(PROFILE_PATH, 'utf8');
   const data = yaml.load(raw) as Record<string, unknown>;
 
   // Required field checks
-  if (!data.version) throw new Error('bellese-profile.yaml: missing required field "version"');
-  if (!data.company) throw new Error('bellese-profile.yaml: missing required field "company"');
-  if (!data.domain) throw new Error('bellese-profile.yaml: missing required field "domain"');
-  if (!data.contract_preferences) throw new Error('bellese-profile.yaml: missing required field "contract_preferences"');
-  if (!data.capabilities) throw new Error('bellese-profile.yaml: missing required field "capabilities"');
+  if (!data.version) throw new Error('profile.yaml: missing required field "version"');
+  if (!data.company) throw new Error('profile.yaml: missing required field "company"');
+  if (!data.domain) throw new Error('profile.yaml: missing required field "domain"');
+  if (!data.contract_preferences) throw new Error('profile.yaml: missing required field "contract_preferences"');
+  if (!data.capabilities) throw new Error('profile.yaml: missing required field "capabilities"');
 
-  const profile = data as unknown as BelleseProfile;
+  const profile = data as unknown as CompanyProfile;
 
   // Completeness warnings
   const warnings: string[] = [];
@@ -45,11 +47,11 @@ export function loadProfile(): BelleseProfile {
 }
 
 // Helpers for code that needs normalized values
-export function getNaicsWhitelist(profile: BelleseProfile): string[] {
+export function getNaicsWhitelist(profile: CompanyProfile): string[] {
   return (profile.contract_preferences?.naics_whitelist ?? []).map(String);
 }
 
-export function getExclusionKeywords(profile: BelleseProfile): string[] {
+export function getExclusionKeywords(profile: CompanyProfile): string[] {
   return profile.domain?.exclusions ?? [];
 }
 
