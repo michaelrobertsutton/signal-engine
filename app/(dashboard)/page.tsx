@@ -62,7 +62,7 @@ export default async function DashboardPage() {
         {/* Alerts */}
         {profileIncomplete && (
           <div className="rounded-md border border-yellow-500/30 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-300">
-            Profile incomplete — open <code className="font-mono">config/bellese-profile.yaml</code> and fill in{' '}
+            Profile incomplete — open <code className="font-mono">config/profile.yaml</code> and fill in{' '}
             <code className="font-mono">exclusion_keywords</code> and <code className="font-mono">proof_points</code>.
           </div>
         )}
@@ -214,3 +214,4 @@ export default async function DashboardPage() {
     </div>
   );
 }
+
