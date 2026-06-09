@@ -1,0 +1,67 @@
+# Signal Engine — Company Profile Template
+# Copy this file to config/profile.yaml and fill in your company's details.
+# profile.yaml is gitignored — never commit real company data to this repo.
+
+version: '1.0.0'
+
+# Your company name — used in LLM prompts
+company: Acme Federal Solutions
+
+# Primary agency you pursue work with (used in SAM.gov filtering and prompts)
+primary_agency: HHS
+primary_agency_name: Department of Health  # SAM.gov fullParentPathName filter (substring match)
+
+domain:
+  # Terms matched against solicitation/report text for capability scoring.
+  # Be specific — generic terms like "IT modernization" match everything.
+  strong:
+    - your primary domain area
+    - another strong capability
+    - a specific technology you excel at
+  conditional:
+    - adjacent domain (needs staffing partner)
+    - specialty area (needs dedicated SME)
+  exclusions:
+    # Solicitations containing these keywords are immediately skipped.
+    - hardware only
+    - construction
+    - food services
+
+capabilities:
+  technical:
+    - cloud modernization
+    - API development
+    - data engineering
+    - agile delivery
+  proof_points:
+    # The LLM uses these when generating solution hypotheses.
+    # Name your real contracts — the more specific, the better the output.
+    - contract: Contract Name 1
+      agency: Agency
+      description: One sentence on what you built and for whom.
+    - contract: Contract Name 2
+      agency: Agency
+      description: One sentence on what you built and for whom.
+
+contract_preferences:
+  size_range:
+    floor: 1000000      # Skip solicitations below this value
+    ceiling: 100000000  # Skip solicitations above this value
+  preferred_types:
+    - IDIQ task order
+    - BPA call
+    - firm fixed price
+    - time and materials
+  naics_whitelist:
+    # Add NAICS codes relevant to your work. Leave empty to skip NAICS filtering.
+    - 541511   # Custom Computer Programming Services
+    - 541512   # Computer Systems Design Services
+    - 541519   # Other Computer Related Services
+
+partner_needs:
+  - describe a gap you typically need to fill with a partner
+
+scoring_weights:
+  strategic_fit: 0.35
+  capability_fit: 0.35
+  competitiveness: 0.30
