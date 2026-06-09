@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Signal Engine",
-  description: "Bellese opportunity intelligence dashboard",
+  description: "Federal opportunity intelligence dashboard",
 };
 
 export default function RootLayout({
